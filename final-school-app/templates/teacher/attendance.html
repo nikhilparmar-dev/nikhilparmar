@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Attendance - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">📋 Daily Attendance</h2>
+    <span class="date-badge-blue">{{ today }}</span>
+</div>
+
+<!-- live counters -->
+<div class="counter-row">
+    <div class="counter-chip green-chip">Present: <b id="pCount">0</b></div>
+    <div class="counter-chip red-chip">Absent: <b id="aCount">0</b></div>
+    <div class="counter-chip yellow-chip">Late: <b id="lCount">0</b></div>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+
+    {% if students %}
+        {% for s in students %}
+        <div class="att-row">
+            <div class="att-left">
+                <div class="roll-box">{{ s.roll_no }}</div>
+                <div>
+                    <div class="att-name">{{ s.name }}</div>
+                    <div class="att-sub">
+                        Overall: 
+                        {% if s.att_pct < 75 %}
+                            <span style="color:#dc2626; font-weight:700;">{{ s.att_pct }}% ⚠️</span>
+                        {% else %}
+                            <span style="color:#16a34a;">{{ s.att_pct }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="att-btns" data-id="{{ s.id }}">
+                <button
+                    class="att-btn {% if att_map.get(s.id) == 'P' or not att_map.get(s.id) %}p-on{% endif %}"
+                    onclick="markAtt(this, '{{ s.id }}', 'P')">P</button>
+                <button
+                    class="att-btn {% if att_map.get(s.id) == 'A' %}a-on{% endif %}"
+                    onclick="markAtt(this, '{{ s.id }}', 'A')">A</button>
+                <button
+                    class="att-btn {% if att_map.get(s.id) == 'L' %}l-on{% endif %}"
+                    onclick="markAtt(this, '{{ s.id }}', 'L')">L</button>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="padding:40px; text-align:center; color:#64748b;">
+            No students found in {{ session.class }}. Add students first.
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- sticky save bar -->
+<div class="save-bar">
+    <span style="font-size:13px; color:#64748b;">Total: {{ students | length }} students</span>
+    <button class="btn btn-success" onclick="saveAttendance()">💾 Save Attendance</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // store current attendance status
+    let attData = {};
+
+    // on page load - set default P for everyone
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.att-row').forEach(function(row) {
+            let id = row.querySelector('.att-btns').dataset.id;
+            let activeBtn = row.querySelector('.att-btn.p-on, .att-btn.a-on, .att-btn.l-on');
+            if (activeBtn) {
+                if (activeBtn.classList.contains('p-on')) attData[id] = 'P';
+                else if (activeBtn.classList.contains('a-on')) attData[id] = 'A';
+                else if (activeBtn.classList.contains('l-on')) attData[id] = 'L';
+            } else {
+                attData[id] = 'P';
+            }
+        });
+        updateCounters();
+    });
+
+    function markAtt(btn, studentId, status) {
+        // remove all active classes from this row's buttons
+        let allBtns = btn.closest('.att-btns').querySelectorAll('.att-btn');
+        allBtns.forEach(function(b) {
+            b.classList.remove('p-on', 'a-on', 'l-on');
+        });
+
+        // add active class to clicked button
+        if (status === 'P') btn.classList.add('p-on');
+        if (status === 'A') btn.classList.add('a-on');
+        if (status === 'L') btn.classList.add('l-on');
+
+        // store status
+        attData[studentId] = status;
+        updateCounters();
+    }
+
+    function updateCounters() {
+        let p = 0, a = 0, l = 0;
+        for (let id in attData) {
+            if (attData[id] === 'P') p++;
+            else if (attData[id] === 'A') a++;
+            else if (attData[id] === 'L') l++;
+        }
+        document.getElementById('pCount').textContent = p;
+        document.getElementById('aCount').textContent = a;
+        document.getElementById('lCount').textContent = l;
+    }
+
+    function saveAttendance() {
+        fetch('/teacher/attendance/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ attendance: attData })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('✅ Attendance saved successfully!');
+            } else {
+                showToast('❌ Something went wrong. Try again.');
+            }
+        })
+        .catch(function() {
+            showToast('❌ Network error. Check internet.');
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Students - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">👨‍🎓 Students — {{ session.class }}</h2>
+    <button class="btn btn-primary" onclick="openModal('addModal')">+ Add Student</button>
+</div>
+
+<!-- search bar -->
+<div class="search-wrap">
+    <input type="text" class="search-input" placeholder="🔍  Search by name or roll no..."
+        oninput="searchStudents(this.value)" />
+</div>
+
+<!-- students list -->
+<div class="students-list" id="studentsList">
+    {% if students %}
+        {% for s in students %}
+        <div class="student-card" data-name="{{ s.name | lower }}" data-roll="{{ s.roll_no }}">
+            <div class="scard-left">
+                <div class="avatar-circle">{{ s.name[0] }}</div>
+                <div>
+                    <div class="scard-name">{{ s.name }}</div>
+                    <div class="scard-sub">Roll: {{ s.roll_no }} · GR: {{ s.gr_number or '-' }}</div>
+                </div>
+            </div>
+            <div class="scard-right">
+                {% if s.att_pct < 75 %}
+                    <span class="badge badge-red">{{ s.att_pct }}% ⚠️</span>
+                {% else %}
+                    <span class="badge badge-green">{{ s.att_pct }}%</span>
+                {% endif %}
+                <button class="btn-icon" onclick="viewStudent('{{ s.id }}', '{{ s.name }}', '{{ s.roll_no }}', '{{ s.gr_number or '' }}', '{{ s.dob or '' }}', '{{ s.gender or '' }}', '{{ s.caste or '' }}', '{{ s.parent_contact or '' }}', '{{ s.aadhaar_number or '' }}', '{{ s.aadhaar_doc_url or '' }}', '{{ s.ration_doc_url or '' }}')">
+                    👁 View
+                </button>
+                <a href="{{ url_for('download_student_pdf', student_id=s.id) }}" class="btn-icon">📄 PDF</a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            No students added yet. Click "+ Add Student" to start.
+        </div>
+    {% endif %}
+</div>
+
+<!-- ADD STUDENT MODAL -->
+<div class="modal-overlay" id="addModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Add New Student</h3>
+            <button class="close-btn" onclick="closeModal('addModal')">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('add_student') }}" enctype="multipart/form-data">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" name="name" placeholder="e.g. Aarav Ramesh Patel" required />
+                </div>
+                <div class="form-group">
+                    <label>Roll Number *</label>
+                    <input type="text" name="roll_no" placeholder="e.g. 01" required />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>GR Number</label>
+                    <input type="text" name="gr_number" placeholder="e.g. GR-2024-001" />
+                </div>
+                <div class="form-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="dob" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option value="">Select</option>
+                        <option value="Male (Kumar)">Male (Kumar)</option>
+                        <option value="Female (Kanya)">Female (Kanya)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Caste</label>
+                    <input type="text" name="caste" placeholder="e.g. OBC" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Parent Contact</label>
+                    <input type="tel" name="parent_contact" placeholder="+91 XXXXXXXXXX" />
+                </div>
+                <div class="form-group">
+                    <label>Aadhaar Number</label>
+                    <input type="text" name="aadhaar_number" placeholder="XXXX XXXX XXXX" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Bank Account Number</label>
+                <input type="text" name="bank_account" placeholder="Enter account number" />
+            </div>
+            <div class="form-group">
+                <label>📄 Aadhaar Card (Upload Photo/PDF)</label>
+                <input type="file" name="aadhaar_doc" accept="image/*,.pdf" />
+            </div>
+            <div class="form-group">
+                <label>📄 Ration Card (Upload Photo/PDF)</label>
+                <input type="file" name="ration_doc" accept="image/*,.pdf" />
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Student</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- VIEW STUDENT MODAL -->
+<div class="modal-overlay" id="viewModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="viewName">Student Profile</h3>
+            <button class="close-btn" onclick="closeModal('viewModal')">✕</button>
+        </div>
+        <div id="viewContent"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function searchStudents(query) {
+        let q = query.toLowerCase();
+        document.querySelectorAll('.student-card').forEach(function(card) {
+            let name = card.dataset.name;
+            let roll = card.dataset.roll;
+            card.style.display = (name.includes(q) || roll.includes(q)) ? 'flex' : 'none';
+        });
+    }
+
+    function viewStudent(id, name, roll, gr, dob, gender, caste, contact, aadhaar, aadhaarUrl, rationUrl) {
+        document.getElementById('viewName').textContent = name;
+        let html = `
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">Roll No</span><span>${roll}</span></div>
+                <div class="detail-item"><span class="detail-label">GR Number</span><span>${gr || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Date of Birth</span><span>${dob || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Gender</span><span>${gender || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Caste</span><span>${caste || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Parent Contact</span><span>${contact || '-'}</span></div>
+                <div class="detail-item"><span class="detail-label">Aadhaar No.</span><span>${aadhaar || '-'}</span></div>
+            </div>
+            <div style="margin-top:16px;">
+                <div style="font-weight:700; margin-bottom:8px; font-size:13px;">Documents</div>
+                <div class="doc-row">
+                    <span>📄 Aadhaar Card</span>
+                    ${aadhaarUrl ? `<a href="${aadhaarUrl}" target="_blank" class="btn-icon">View</a>` : '<span style="color:#94a3b8">Not uploaded</span>'}
+                </div>
+                <div class="doc-row">
+                    <span>📄 Ration Card</span>
+                    ${rationUrl ? `<a href="${rationUrl}" target="_blank" class="btn-icon">View</a>` : '<span style="color:#94a3b8">Not uploaded</span>'}
+                </div>
+            </div>
+        `;
+        document.getElementById('viewContent').innerHTML = html;
+        openModal('viewModal');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Dashboard — {{ session.class }}</h2>
+    <span class="date-text">📅 {{ today }}</span>
+</div>
+
+<!-- stat cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">{{ total }}</div>
+        <div class="stat-sub">{{ session.class }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Present Today</div>
+        <div class="stat-value green">{{ present }}</div>
+        <div class="stat-sub">
+            {% if total > 0 %}{{ ((present / total) * 100) | round | int }}%{% else %}0%{% endif %}
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Absent Today</div>
+        <div class="stat-value red">{{ absent }}</div>
+        <div class="stat-sub">Students absent</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Low Attendance</div>
+        <div class="stat-value yellow">{{ low_count }}</div>
+        <div class="stat-sub">Below 75%</div>
+    </div>
+</div>
+
+<!-- quick actions -->
+<div class="card">
+    <div class="card-title">Quick Actions</div>
+    <div class="quick-actions">
+        <a href="{{ url_for('teacher_attendance') }}" class="quick-btn">
+            <span>📋</span>
+            <span>Mark Attendance</span>
+        </a>
+        <a href="{{ url_for('teacher_students') }}" class="quick-btn">
+            <span>👨‍🎓</span>
+            <span>View Students</span>
+        </a>
+        <a href="{{ url_for('teacher_marks') }}" class="quick-btn">
+            <span>📝</span>
+            <span>Enter Marks</span>
+        </a>
+        <a href="{{ url_for('teacher_download') }}" class="quick-btn">
+            <span>📥</span>
+            <span>Download Excel</span>
+        </a>
+    </div>
+</div>
+
+<!-- low attendance warning -->
+{% if low_students %}
+<div class="card">
+    <div class="card-title">
+        ⚠️ Low Attendance Students
+        <span class="badge badge-red">{{ low_count }} students</span>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Attendance %</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in low_students %}
+            <tr>
+                <td>{{ s.roll }}</td>
+                <td>{{ s.name }}</td>
+                <td><span class="badge badge-red">{{ s.pct }}%</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endblock %}
