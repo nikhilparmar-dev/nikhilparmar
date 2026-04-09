@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Principal Dashboard - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Principal Dashboard</h2>
+    <span class="date-text">📅 Today</span>
+</div>
+
+<!-- stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-sub">All classes</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Teachers</div>
+        <div class="stat-value">{{ total_teachers }}</div>
+        <div class="stat-sub">Active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Present Today</div>
+        <div class="stat-value green">{{ total_present }}</div>
+        <div class="stat-sub">All classes combined</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total Classes</div>
+        <div class="stat-value">{{ class_summary | length }}</div>
+        <div class="stat-sub">Active classes</div>
+    </div>
+</div>
+
+<!-- class wise overview -->
+<div class="card">
+    <div class="card-title">All Classes — Today's Overview</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Teacher</th>
+                <th>Total Students</th>
+                <th>Present Today</th>
+                <th>Attendance Marked</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if class_summary %}
+                {% for c in class_summary %}
+                <tr>
+                    <td><b>{{ c.class }}</b></td>
+                    <td>{{ c.teacher }}</td>
+                    <td>{{ c.total }}</td>
+                    <td>
+                        {{ c.present }}
+                        <span style="color:#94a3b8; font-size:12px;">
+                            / {{ c.total }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.att_marked %}
+                            <span class="badge badge-green">✓ Yes</span>
+                        {% else %}
+                            <span class="badge badge-red">✗ No</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:30px; color:#94a3b8;">
+                        No classes setup yet. Add teachers and students first.
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
