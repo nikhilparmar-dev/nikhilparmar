@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Rajivnagar Shala</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a4f8a;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .school-icon {
+            font-size: 52px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .logo-area h2 {
+            color: #1a4f8a;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo-area p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .role-tabs {
+            display: flex;
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            background: transparent;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #1a4f8a;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            color: #1e293b;
+            transition: border 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #1a4f8a;
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a4f8a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: background 0.2s;
+        }
+
+        .login-btn:hover {
+            background: #2563b0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+
+        <div class="logo-area">
+            <span class="school-icon">🏫</span>
+            <h2>Rajivnagar Shala</h2>
+            <p>Primary School Dashboard</p>
+        </div>
+
+        <!-- role selector tabs -->
+        <div class="role-tabs">
+            <button class="tab-btn active" id="teacherTab" onclick="setRole('teacher')">
+                Teacher Login
+            </button>
+            <button class="tab-btn" id="principalTab" onclick="setRole('principal')">
+                Principal Login
+            </button>
+        </div>
+
+        {% if error %}
+            <div class="error-msg">⚠️ {{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="role" id="roleInput" value="teacher" />
+
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" placeholder="Enter username" required autofocus />
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter password" required />
+            </div>
+
+            <button type="submit" class="login-btn">Login →</button>
+        </form>
+
+    </div>
+
+    <script>
+        function setRole(role) {
+            document.getElementById('roleInput').value = role;
+            document.getElementById('teacherTab').classList.toggle('active', role === 'teacher');
+            document.getElementById('principalTab').classList.toggle('active', role === 'principal');
+        }
+    </script>
+
+</body>
+</html>
