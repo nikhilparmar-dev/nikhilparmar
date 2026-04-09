@@ -63,6 +63,16 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
 
+        # TEMP ADMIN LOGIN (bypass)
+if username == "admin" and password == "admin":
+    session['user_id'] = "admin"
+    session['name'] = "Admin"
+    session['username'] = "admin"
+    session['role'] = "principal"
+    session['class'] = ""
+
+    return redirect(url_for('principal_dashboard'))
+
         # find user in supabase
         result = supabase.table('users').select('*').eq('username', username).execute()
 
