@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Manage Teachers - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">👩‍🏫 Manage Teachers</h2>
+    <button class="btn btn-primary" onclick="openModal('addTeacherModal')">+ Add Teacher</button>
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Username</th>
+                <th>Class</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if teachers %}
+                {% for t in teachers %}
+                <tr>
+                    <td><b>{{ t.name }}</b></td>
+                    <td>{{ t.username }}</td>
+                    <td>{{ t.class_assigned or 'Not assigned' }}</td>
+                    <td>
+                        <button class="btn-icon"
+                            onclick="openResetModal('{{ t.id }}', '{{ t.name }}')">
+                            🔑 Reset Pass
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_teacher') }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Delete {{ t.name }}? This cannot be undone.')">
+                            <input type="hidden" name="teacher_id" value="{{ t.id }}" />
+                            <button type="submit" class="btn-icon danger-btn">🗑 Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">
+                        No teachers added yet.
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ADD TEACHER MODAL -->
+<div class="modal-overlay" id="addTeacherModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Add New Teacher</h3>
+            <button class="close-btn" onclick="closeModal('addTeacherModal')">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('add_teacher') }}">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" name="name" placeholder="e.g. Meena Ben Patel" required />
+            </div>
+            <div class="form-group">
+                <label>Username *</label>
+                <input type="text" name="username" placeholder="e.g. teacher1" required />
+            </div>
+            <div class="form-group">
+                <label>Password *</label>
+                <input type="password" name="password" placeholder="Set a password" required />
+            </div>
+            <div class="form-group">
+                <label>Assign Class</label>
+                <select name="class_assigned">
+                    <option value="">Select class</option>
+                    {% for i in range(1, 9) %}
+                        <option value="Class {{ i }}">Class {{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Save Teacher</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('addTeacherModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Reset Password — <span id="resetTeacherName"></span></h3>
+            <button class="close-btn" onclick="closeModal('resetModal')">✕</button>
+        </div>
+        <form method="POST" action="{{ url_for('reset_teacher_password') }}">
+            <input type="hidden" name="teacher_id" id="resetTeacherId" />
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" name="new_password" placeholder="Enter new password" required />
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Reset Password</button>
+                <button type="button" class="btn btn-outline" onclick="closeModal('resetModal')">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openResetModal(id, name) {
+        document.getElementById('resetTeacherId').value = id;
+        document.getElementById('resetTeacherName').textContent = name;
+        openModal('resetModal');
+    }
+</script>
+{% endblock %}
