@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Marks Entry - Rajivnagar Shala{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">📝 Marks Entry — {{ session.class }}</h2>
+</div>
+
+<!-- semester + subject selector -->
+<div class="card" style="padding:16px 20px;">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <div>
+            <label style="font-size:12px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">SEMESTER</label>
+            <div style="display:flex; gap:6px;">
+                <a href="?subject={{ subject }}&semester=1"
+                    class="sem-btn {% if semester == '1' %}active{% endif %}">Semester 1</a>
+                <a href="?subject={{ subject }}&semester=2"
+                    class="sem-btn {% if semester == '2' %}active{% endif %}">Semester 2</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- subject tabs -->
+<div class="subject-tabs">
+    {% set subjects = [
+        ('GUJ', 'Gujarati'),
+        ('ENG', 'English'),
+        ('HINDI', 'Hindi'),
+        ('SAN', 'Sanskrit'),
+        ('MATHS', 'Maths'),
+        ('SCI', 'Science'),
+        ('SS', 'Soc. Sci')
+    ] %}
+    {% for code, name in subjects %}
+        <a href="?subject={{ code }}&semester={{ semester }}"
+            class="sub-tab {% if subject == code %}active{% endif %}">
+            {{ name }}
+        </a>
+    {% endfor %}
+</div>
+
+<!-- marks info -->
+<div style="font-size:13px; color:#64748b; margin-bottom:12px; padding: 0 4px;">
+    Subject: <b>
+        {% for code, name in subjects %}
+            {% if subject == code %}{{ name }}{% endif %}
+        {% endfor %}
+    </b>
+    &nbsp;|&nbsp; Written: out of 40 &nbsp;|&nbsp; Participation: out of 20 &nbsp;|&nbsp; Total: out of 60
+</div>
+
+<div class="card" style="padding:0; overflow:hidden;">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Roll</th>
+                <th>Student Name</th>
+                <th>Written (/40)</th>
+                <th>Participation (/20)</th>
+                <th>Total</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if students %}
+                {% for s in students %}
+                <tr data-id="{{ s.id }}">
+                    <td>{{ s.roll_no }}</td>
+                    <td>{{ s.name }}</td>
+                    <td>
+                        <input type="number" class="marks-input written-input"
+                            min="0" max="40"
+                            value="{{ marks_map[s.id].written_marks if s.id in marks_map else '' }}"
+                            placeholder="0-40"
+                            oninput="calcTotal(this)" />
+                    </td>
+                    <td>
+                        <input type="number" class="marks-input part-input"
+                            min="0" max="20"
+                            value="{{ marks_map[s.id].participation_marks if s.id in marks_map else '' }}"
+                            placeholder="0-20"
+                            oninput="calcTotal(this)" />
+                    </td>
+                    <td><b class="total-cell">
+                        {% if s.id in marks_map %}
+                            {{ marks_map[s.id].written_marks + marks_map[s.id].participation_marks }}
+                        {% else %}—{% endif %}
+                    </b></td>
+                    <td>
+                        <span class="badge grade-cell
+                            {% if s.id in marks_map %}
+                                {% set total = marks_map[s.id].written_marks + marks_map[s.id].participation_marks %}
+                                {% set pct = (total / 60 * 100) | int %}
+                                {% if pct >= 90 %}badge-blue
+                                {% elif pct >= 75 %}badge-green
+                                {% elif pct >= 60 %}badge-yellow
+                                {% else %}badge-red{% endif %}
+                            {% else %}badge-blue{% endif %}">
+                            {% if s.id in marks_map %}
+                                {% set total = marks_map[s.id].written_marks + marks_map[s.id].participation_marks %}
+                                {% set pct = (total / 60 * 100) | int %}
+                                {% if pct >= 90 %}A+
+                                {% elif pct >= 75 %}A
+                                {% elif pct >= 60 %}B
+                                {% elif pct >= 45 %}C
+                                {% else %}D{% endif %}
+                            {% else %}—{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">
+                    No students in this class yet.
+                </td></tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- save bar -->
+<div class="save-bar">
+    <span style="font-size:13px; color:#64748b;">
+        {{ subject }} — Semester {{ semester }}
+    </span>
+    <button class="btn btn-success" onclick="saveAllMarks()">💾 Save Marks</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const currentSubject = '{{ subject }}';
+    const currentSemester = '{{ semester }}';
+
+    function calcTotal(input) {
+        let row = input.closest('tr');
+        let written = parseInt(row.querySelector('.written-input').value) || 0;
+        let part = parseInt(row.querySelector('.part-input').value) || 0;
+
+        // validate max values
+        if (written > 40) { input.value = 40; written = 40; }
+        if (part > 20) { input.value = 20; part = 20; }
+
+        let total = written + part;
+        row.querySelector('.total-cell').textContent = total;
+
+        // calculate grade
+        let pct = (total / 60) * 100;
+        let grade = 'D';
+        let cls = 'badge-red';
+        if (pct >= 90) { grade = 'A+'; cls = 'badge-blue'; }
+        else if (pct >= 75) { grade = 'A'; cls = 'badge-green'; }
+        else if (pct >= 60) { grade = 'B'; cls = 'badge-yellow'; }
+        else if (pct >= 45) { grade = 'C'; cls = 'badge-yellow'; }
+
+        let gradeEl = row.querySelector('.grade-cell');
+        gradeEl.textContent = total > 0 ? grade : '—';
+        gradeEl.className = 'badge grade-cell ' + cls;
+    }
+
+    function saveAllMarks() {
+        let marksData = {};
+
+        document.querySelectorAll('tbody tr[data-id]').forEach(function(row) {
+            let id = row.dataset.id;
+            let written = parseInt(row.querySelector('.written-input').value) || 0;
+            let part = parseInt(row.querySelector('.part-input').value) || 0;
+
+            if (written > 0 || part > 0) {
+                marksData[id] = { written: written, participation: part };
+            }
+        });
+
+        if (Object.keys(marksData).length === 0) {
+            showToast('⚠️ No marks entered yet!');
+            return;
+        }
+
+        fetch('/teacher/marks/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: currentSubject,
+                semester: currentSemester,
+                marks: marksData
+            })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('✅ Marks saved successfully!');
+            } else {
+                showToast('❌ Error saving marks. Try again.');
+            }
+        });
+    }
+</script>
+{% endblock %}
